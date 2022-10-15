@@ -13,22 +13,27 @@ async function weatherForNow(city) {
 
     // console.log(info)
     const lat = info[0]['lat'],
-        lon = info[0]['lon']
+        lon = info[0]['lon'];
 
     const data = await fetch(`http://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${WToken}`)
         .then(function (resp){return resp.json()})
         .then(function(data) {
-            /*const weatherList =`Погода за вікном️\n🏘️ Місто : ${city}\n🌡️ Температура : ${Math.round(data.main.temp-273)}°\n🪁 На вулиці : ${data.weather[0]['description']}`
-            return weatherList*/
-
             return data
         })
         .catch(function (err){
             return `Таке міста не існує, спробуйте ще раз!`
         });
+    let weatherList = [],
+        list='Day : ' + data.list[0].dt_txt.slice(0,10) + "\n\n"
 
-    console.log(data.list[0])
-    return "-_-"
+    for(let i = 0;i<40; i++){
+        if(data.list[i].dt_txt.slice(11,13) === '00'){
+            weatherList.push(list)
+            list='Date : ' + data.list[i].dt_txt.slice(0,10) + "\n\n"
+        }
+        list +="Time : " + data.list[i].dt_txt.slice(11,16) +"\nTemp : " + Math.round(data.list[i].main.temp - 273) + "°\nDescription : " + data.list[i].weather[0]['description']+"\n\n"
+    }
+    return weatherList
 
 }
 
