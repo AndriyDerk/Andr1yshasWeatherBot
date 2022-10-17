@@ -15,9 +15,9 @@ const start = () => {
     bot.on('message', async msg =>{
         const text = msg.text
         const chatId = msg.chat.id
-        const weatherList = await controllers.weatherForNow(text)
-
-       for(let i = 0; i < weatherList.length; i++){
+         const weatherList = await controllers.weatherForNow(text)
+       // // bot.sendPhoto(chatId, 'https://img.icons8.com/office/344/cloud.png',  {caption : weatherList[1]})
+        for(let i = 0; i < weatherList.length; i++){
            bot.sendMessage(chatId, weatherList[i])
         }
         return console.log(`done!`);
