@@ -15,23 +15,32 @@ function getDate(numDay){//TODO: value is over than max date
     return `${date.getDate() + numDay} ${new Intl.DateTimeFormat('en-US', options).format(date)}`
 }
 
-const buttons = {
+const menuButtons = {
     reply_markup: JSON.stringify({
         inline_keyboard: [
-            [{text: `${getDate(0)}`, callback_data: `5-0`}],
-            [{text: `${getDate(1)}`, callback_data: `5-1`},
-            {text: `${getDate(2)}`, callback_data: `5-2`}],
-            [{text: `${getDate(3)}`, callback_data: `5-3`},
-            {text: `${getDate(4)}`, callback_data: `5-4`}]
+            [{text: `Current weather`, callback_data: `0-0`}],
+            [{text: 'More weather', callback_data: `0-1`}],
+            [{text: `Info`, callback_data: `0-2`}]
+        ]
+    })
+}
+
+const weatherButtons = {
+    reply_markup: JSON.stringify({
+        inline_keyboard: [
+            [{text: `${getDate(0)}`, callback_data: `1-0`}],
+            [{text: `${getDate(1)}`, callback_data: `1-1`},
+            {text: `${getDate(2)}`, callback_data: `1-2`}],
+            [{text: `${getDate(3)}`, callback_data: `1-3`},
+            {text: `${getDate(4)}`, callback_data: `1-4`}]
         ]
     })
 }
 
 const start = () => {
     bot.setMyCommands([
-        {command: '/start', description: "start!"},
-        {command: '/weatherfornow', description: "Weather for now!"},
-        {command: '/weatherforrivedays', description: "Weather for five days!"}
+        {command: '/start', description: "Start"},
+        {command: '/menu', description: "Menu"}
     ])
 
     bot.on('message', async msg =>{
@@ -48,7 +57,7 @@ const start = () => {
                 user.save();
 
             }
-            return await bot.sendMessage(chatId, 'Welcome!')
+            return bot.sendMessage(chatId, 'Menu:', menuButtons)
         }else
             if(text[0]!=='/'){
                 const user = await User.findOne({chatId})
@@ -59,41 +68,51 @@ const start = () => {
                 user.save()
                 return await bot.sendMessage(chatId,`Default city changed to ${text}!`)
             }else
-                if(text==='/weatherforrivedays'){
-                    return bot.sendMessage(chatId, "Choose a date", buttons)
-                }else
-                    if(text==='/weatherfornow'){
-                        const user = await User.findOne({chatId})
-                        if(!user){
-                            return console.log(`can't find the user`)
-                        }
-                        const weatherList = await controllers.weatherForNow(user.cityName)
-                        await bot.sendMessage(chatId, `Weather for ${user.cityName}`)
-                        return await bot.sendMessage(chatId, weatherList)
-                    }else{
-                       return await bot.sendMessage(chatId, 'Unknown command!')
-                    }
+                if(text=='/menu'){
+                    return bot.sendMessage(chatId, 'Menu:', menuButtons)
+                }else                     {
+                   return await bot.sendMessage(chatId, 'Unknown command!')
+                }
     return await bot.sendMessage(chatId, '❔')
 
     })
 
     bot.on('callback_query', async msg =>{
-        //console.log(msg)
-
         const chatId = msg.from.id
-         console.log(msg.data.slice(2))
-        //  bot.sendMessage(chatId, "13")
-        const info = msg.data.slice(0,1)
-        if(info === '5'){
-            const user = await User.findOne({chatId})
-            if(!user){
-                return console.log(`can't find the user`)
-            }
+        const info = [ msg.data.slice(0,1), msg.data.slice(2)];
 
-            const weatherList = await controllers.weatherForFiveDays(user.cityName)
-            await bot.sendMessage(chatId, `Weather for ${user.cityName}`)
-            return await bot.sendMessage(chatId, weatherList[msg.data.slice(2)])
-        }
+         switch (info[0]){
+             case '0':
+                switch (info[1]){
+                    case '0':// Current weather
+                        const user = await User.findOne({chatId})
+                        if(!user){
+                            await bot.sendMessage(chatId, "Something went wrong")
+                            return console.log(`can't find the user`)
+                        }
+                        const weatherList = await controllers.weatherForNow(user.cityName)
+                        await bot.sendMessage(chatId, `Weather for ${user.cityName}`)
+                        return await bot.sendMessage(chatId, weatherList)
+                    case '1':// -> form for 5 days weather
+                        return await bot.sendMessage(chatId, "Choose a date:", weatherButtons)
+                    case '2':
+                        return await bot.sendMessage(chatId, 'Info:\n\n* To select your city just enter name in chat\n\n* "Current weather" - command which returns a current weather\n\n* "More weather" - command which returns form to choose necessary weather`s date')
+                    default:
+                        return await bot.sendMessage(chatId, "Something went wrong")
+                }
+             case '1':// 5 days weather
+                 const user = await User.findOne({chatId})
+                 if(!user){
+                     await bot.sendMessage(chatId, "Something went wrong")
+                     return console.log(`Can't find the user`)
+                 }
+
+                 const weatherList = await controllers.weatherForFiveDays(user.cityName)
+                 await bot.sendMessage(chatId, `Weather for ${user.cityName}`)
+                 return await bot.sendMessage(chatId, weatherList[info[1]])
+         }
+
+
     })
 
 }
