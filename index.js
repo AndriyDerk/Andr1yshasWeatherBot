@@ -11,8 +11,17 @@ const bot = new TelegramApi(token, {polling: true})
 const date = new Date();
 
 function getDate(numDay){//TODO: value is over than max date
+
+    const maxDate = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
     const options = { month: 'long'};
-    return `${date.getDate() + numDay} ${new Intl.DateTimeFormat('en-US', options).format(date)}`
+    let day = date.getDate() + numDay,
+        month = new Intl.DateTimeFormat('en-US', options).format(date)
+    if(month == 2 && day > 29 &&((date.getFullYear()%4==0) || (date.getFullYear()%4==0 && date.getFullYear()%100)))
+        day-=29
+    if(day > maxDate[month])day-=maxDate[month]
+
+    return `${day} ${month}`
 }
 
 const menuButtons = {
@@ -30,9 +39,9 @@ const weatherButtons = {
         inline_keyboard: [
             [{text: `${getDate(0)}`, callback_data: `1-0`}],
             [{text: `${getDate(1)}`, callback_data: `1-1`},
-            {text: `${getDate(2)}`, callback_data: `1-2`}],
+                {text: `${getDate(2)}`, callback_data: `1-2`}],
             [{text: `${getDate(3)}`, callback_data: `1-3`},
-            {text: `${getDate(4)}`, callback_data: `1-4`}]
+                {text: `${getDate(4)}`, callback_data: `1-4`}]
         ]
     })
 }
@@ -59,21 +68,21 @@ const start = () => {
             }
             return bot.sendMessage(chatId, 'Menu:', menuButtons)
         }else
-            if(text[0]!=='/'){
-                const user = await User.findOne({chatId})
-                if(!user){
-                    return await bot.sendMessage(chatId,'error')
-                }
-                await  User.updateOne({chatId: chatId}, {cityName: text})
-                user.save()
-                return await bot.sendMessage(chatId,`Default city changed to ${text}!`)
-            }else
-                if(text=='/menu'){
-                    return bot.sendMessage(chatId, 'Menu:', menuButtons)
-                }else                     {
-                   return await bot.sendMessage(chatId, 'Unknown command!')
-                }
-    return await bot.sendMessage(chatId, '❔')
+        if(text[0]!=='/'){
+            const user = await User.findOne({chatId})
+            if(!user){
+                return await bot.sendMessage(chatId,'error')
+            }
+            await  User.updateOne({chatId: chatId}, {cityName: text})
+            user.save()
+            return await bot.sendMessage(chatId,`Default city changed to ${text}!`)
+        }else
+        if(text=='/menu'){
+            return bot.sendMessage(chatId, 'Menu:', menuButtons)
+        }else                     {
+            return await bot.sendMessage(chatId, 'Unknown command!')
+        }
+        return await bot.sendMessage(chatId, '❔')
 
     })
 
@@ -81,8 +90,8 @@ const start = () => {
         const chatId = msg.from.id
         const info = [ msg.data.slice(0,1), msg.data.slice(2)];
 
-         switch (info[0]){
-             case '0':
+        switch (info[0]){
+            case '0':
                 switch (info[1]){
                     case '0':// Current weather
                         const user = await User.findOne({chatId})
@@ -100,17 +109,17 @@ const start = () => {
                     default:
                         return await bot.sendMessage(chatId, "Something went wrong")
                 }
-             case '1':// 5 days weather
-                 const user = await User.findOne({chatId})
-                 if(!user){
-                     await bot.sendMessage(chatId, "Something went wrong")
-                     return console.log(`Can't find the user`)
-                 }
+            case '1':// 5 days weather
+                const user = await User.findOne({chatId})
+                if(!user){
+                    await bot.sendMessage(chatId, "Something went wrong")
+                    return console.log(`Can't find the user`)
+                }
 
-                 const weatherList = await controllers.weatherForFiveDays(user.cityName)
-                 await bot.sendMessage(chatId, `Weather for ${user.cityName}`)
-                 return await bot.sendMessage(chatId, weatherList[info[1]])
-         }
+                const weatherList = await controllers.weatherForFiveDays(user.cityName)
+                await bot.sendMessage(chatId, `Weather for ${user.cityName}`)
+                return await bot.sendMessage(chatId, weatherList[info[1]])
+        }
 
 
     })
@@ -118,4 +127,3 @@ const start = () => {
 }
 
 start();
-
